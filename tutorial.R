@@ -1,17 +1,21 @@
 #install package to access SSP Cloud
+
+install.packages("aws.s3", repos = "https://cloud.r-project.org")
 library(aws.s3)
 
-# isso aqui tem que mudar
-Sys.setenv("AWS_ACCESS_KEY_ID" = "O0MHLGHCLTWXZO17A74F",
-           "AWS_SECRET_ACCESS_KEY" = "BcNt86nfwvO6QwK67S6vczb+inLujB4Y40J7pDpT",
-           "AWS_DEFAULT_REGION" = "us-east-1",
-           "AWS_SESSION_TOKEN" = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJPME1ITEdIQ0xUV1haTzE3QTc0RiIsImFsbG93ZWQtb3JpZ2lucyI6WyIqIl0sImF1ZCI6WyJtaW5pby1kYXRhbm9kZSIsIm9ueXhpYSIsImFjY291bnQiXSwiYXV0aF90aW1lIjoxNzQwNDc5ODkxLCJhenAiOiJvbnl4aWEiLCJlbWFpbCI6InRhdXNjaGxAYWZkLmZyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImV4cCI6MTc0MTA4NDY5NCwiZmFtaWx5X25hbWUiOiJUYXVzY2giLCJnaXZlbl9uYW1lIjoiTHVjYSIsImdyb3VwcyI6WyJVU0VSX09OWVhJQSIsImVzdGVlbSJdLCJpYXQiOjE3NDA0Nzk4OTQsImlzcyI6Imh0dHBzOi8vYXV0aC5sYWIuc3NwY2xvdWQuZnIvYXV0aC9yZWFsbXMvc3NwY2xvdWQiLCJqdGkiOiJjMjQ3NTE5Ni02MGIzLTQ2MjktOWM3Mi1lOGFhM2YxMTE3Y2EiLCJsb2NhbGUiOiJmciIsIm5hbWUiOiJMdWNhIFRhdXNjaCIsInBvbGljeSI6InN0c29ubHkiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0YXVzY2giLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImRlZmF1bHQtcm9sZXMtc3NwY2xvdWQiXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwiZGVmYXVsdC1yb2xlcy1zc3BjbG91ZCJdLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGdyb3VwcyBlbWFpbCIsInNpZCI6ImEwYTMzMTBhLTNlNzMtNDE2NS1iNDQ1LWM1ZTFmMDdiOTU2ZSIsInN1YiI6IjJhMDI0NGQwLWJlYTktNDBkOC1hNzczLWQ0ZDZlMjAwM2EwZSIsInR5cCI6IkJlYXJlciJ9.QNkFWvDLJf-JROAiyzIRdfCNIwN4ljPWYlk4AzhpLkTHO_J5V3hKKjaSd6KvyEeDltHIvtFJAiCCLvIEIwU77A",
-           "AWS_S3_ENDPOINT"= "minio.lab.sspcloud.fr")
+Sys.setenv(
+  AWS_S3_ENDPOINT = "minio.lab.sspcloud.fr",
+  AWS_ACCESS_KEY_ID = "VTCNKYXT4XZBHSWF390L",
+  AWS_SECRET_ACCESS_KEY = "Ki+e+O5pY5d19N+KkW9627DtlpoboAoFyF5yAwHV",
+  AWS_SESSION_TOKEN = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJWVENOS1lYVDRYWkJIU1dGMzkwTCIsImF1ZCI6Im1pbmlvLWRhdGFub2RlIiwiYXV0aF90aW1lIjoxNzk0ODY0OTExLCJhenAiOiJvbnl4aWEiLCJlbWFpbCI6InRhdXNjaGxAYWZkLmZyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImV4cCI6MTc5NTQ3NDgxNywiZmFtaWx5X25hbWUiOiJUYXVzY2giLCJnaXZlbl9uYW1lIjoiTHVjYSIsImdyb3VwcyI6WyJVU0VSX09OWVhJQSIsImVzdGVlbSJdLCJpYXQiOjE3OTQ4NzAwMTYsImlzcyI6Imh0dHBzOi8vYXV0aC5sYWIuc3NwY2xvdWQuZnIvYXV0aC9yZWFsbXMvc3NwY2xvdWQiLCJqdGkiOiJvbnJ0cnQ6NzcwNDkzNjMtODlkOC04ODZlLThlYjYtOWJjYjg2NDA4ZjI2IiwibG9jYWxlIjoiZnIiLCJuYW1lIjoiTHVjYSBUYXVzY2giLCJvbnl4aWEtdXNlcm5hbWUiOiJ0YXVzY2giLCJwb2xpY3kiOiJzdHNvbmx5LHN0c29ubHkyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidGF1c2NoIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCByZXNvdXJjZTptaW5pbyIsInNpZCI6ImE2NEVaU2JvVEFmdjdEX1Rrc2d1c0JoeiIsInN1YiI6IjJhMDI0NGQwLWJlYTktNDBkOC1hNzczLWQ0ZDZlMjAwM2EwZSIsInR5cCI6IkJlYXJlciJ9.luq_eYWXvO10qJjMkmkvtGmV6C7J15kftkVxotzYbZzyvj4blbiq9CahW8vgZDjQBgQaKlDSSBxRd_LM5Fkmww"
+)
 
 #accessing data
 ReadMe <- as.matrix(s3read_using(FUN = data.table::fread,
                                  object = "Gloria/GLORIA_ReadMe_059a.xlsx",
                                  bucket = "projet-esteem", opts = list("region" = "")))
+
+
 #saving data
 s3write_using(x = as.data.frame(ReadMe), FUN = data.table::fwrite,
               object = "Gloria/GLORIA_ReadMe_059a.xlsx",
