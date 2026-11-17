@@ -62,7 +62,8 @@ FD <- ler_matriz("Gloria/matrices/FD_2019.rds")   # demanda final
 VA <- ler_matriz("Gloria/matrices/VA_2019.rds")   # valor adicionado
 QT <- ler_matriz("Gloria/matrices/QT_2019.rds")   # satélite dos setores
 QY <- ler_matriz("Gloria/matrices/QY_2019.rds")   # satélite da demanda final
-X  <- ler_matriz("Gloria/matrices/x_2019.rds")    # produção (ver nota no bloco 5)
+# O arquivo x_2019.rds do bucket NÃO é usado (não bate com a tabela).
+# A produção x é calculada no script 02.
 
 
 # ------------------------------------------------------------
@@ -92,7 +93,6 @@ stopifnot(
   dim(VA) == c(6, n),
   dim(QT) == c(159, n),
   dim(QY) == c(159, 164),
-  length(X) == n,
   nrow(lab_IO) == n,
   nrow(lab_FD) == 164 * 6,
   nrow(lab_QT) == 159,
@@ -112,7 +112,6 @@ stopifnot(
 #    - a matriz A do bucket não bate com IO / x, IO / x_lin nem IO / x_col
 #    -> perguntar a quem preparou os dados como IO, x e A foram construídos
 # ------------------------------------------------------------
-x     <- as.vector(X)
 x_lin <- rowSums(IO) + rowSums(FD)   # vendas: intermediárias + demanda final
 x_col <- colSums(IO) + colSums(VA)   # custos: insumos + valor adicionado
 
@@ -129,17 +128,29 @@ ue27 <- c("AUT", "BEL", "BGR", "CYP", "CZE", "DEU", "DNK", "ESP", "EST",
           "FIN", "FRA", "GRC", "HRV", "HUN", "IRL", "ITA", "LTU", "LUX",
           "LVA", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "SWE")
 
-stopifnot(all(c(mercosul, ue27) %in% paises))      # todos os códigos existem
+# Grupos de análise — para acrescentar ou tirar um grupo, é só mexer aqui.
+# Países que não estão em nenhum grupo viram "Resto".
+grupos <- list(
+  UE       = ue27,
+  Mercosul = mercosul,
+  China    = "CHN",
+  EUA      = "USA"
+  # , AmSul = c("BOL", "CHL", "COL", "ECU", "PER", "VEN")  # resto da Am. do Sul (opcional)
+)
 
-# Bloco de cada país
+stopifnot(all(unlist(grupos) %in% paises))   # todos os códigos existem
+stopifnot(!any(duplicated(unlist(grupos))))  # nenhum país em dois grupos
+
+# Grupo de cada país
 bloco <- function(pais) {
-  ifelse(pais %in% ue27, "UE",
-         ifelse(pais %in% mercosul, "Mercosul", "Resto"))
+  b <- rep("Resto", length(pais))
+  for (g in names(grupos)) b[pais %in% grupos[[g]]] <- g
+  b
 }
 
-# Bloco de cada linha/coluna, por dimensão da matriz
+# Grupo de cada linha/coluna, por dimensão da matriz
 bloco_IO <- bloco(lab_IO$V1)   # 19.680 — linhas e colunas de IO, A, L;
-                               #          linhas de FD; colunas de QT e VA; x
+#          linhas de FD; colunas de QT e VA; x
 bloco_FD <- bloco(lab_FD$V1)   # 984    — colunas de FD
 bloco_QY <- bloco(paises)      # 164    — colunas de QY
 
@@ -153,5 +164,9 @@ col_FD_ue  <- which(bloco_FD == "UE")         # 162 (27 x 6)
 col_QY_mer <- which(bloco_QY == "Mercosul")   # 4
 col_QY_ue  <- which(bloco_QY == "UE")         # 27
 
-# Conferência
-table(bloco_IO) / 120   # países por bloco: Mercosul 4, UE 27, Resto 133
+# China e EUA: mesma lógica, quando precisar
+# pos_chn <- which(bloco_IO == "China");  col_FD_chn <- which(bloco_FD == "China")
+# pos_usa <- which(bloco_IO == "EUA");    col_FD_usa <- which(bloco_FD == "EUA")
+
+# Conferência: países por grupo
+table(bloco_IO) / 120   # China 1, EUA 1, Mercosul 4, Resto 131, UE 27
