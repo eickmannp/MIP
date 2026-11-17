@@ -1,7 +1,7 @@
 # ============================================================
 # 02_calcular_x_A_L.R
 # Calcula produção (x), coeficientes técnicos (A) e inversa de Leontief (L)
-# Rodar depois de 01_carregar_dados.R
+# Rodar depois de 01_carregar_dados.R (usa IO, FD, x_lin, lab_IO, bloco_IO)
 #
 # Memória: IO, A e L têm ~3 GB cada; a inversão precisa de espaço extra.
 # Contar com ~12–15 GB livres. IO é apagada depois de calcular A.
@@ -9,14 +9,24 @@
 
 
 # ------------------------------------------------------------
-# 1. Produção (x)
-#    Usamos o lado das vendas: x = vendas intermediárias + demanda final.
-#    É o que garante a identidade do modelo de Leontief: L %*% y = x.
-#    (O arquivo x do bucket não é usado — não bate com a tabela.)
+# 0. Velocidade da álgebra linear
+#    Procurar a linha "BLAS" na saída:
+#    - OpenBLAS ou MKL -> a inversão leva minutos
+#    - "libRblas" (BLAS padrão do R) -> pode levar mais de uma hora
 # ------------------------------------------------------------
-x <- rowSums(IO) + rowSums(FD)
+sessionInfo()
 
-sum(x <= 0)    # setores com produção zero ou negativa
+
+# ------------------------------------------------------------
+# 1. Produção (x)
+#    Lado das vendas: x = vendas intermediárias + demanda final
+#    (já calculado no script 01 como x_lin).
+#    É o que garante a identidade do modelo de Leontief: L %*% y = x.
+# ------------------------------------------------------------
+x <- x_lin
+rm(x_lin, x_col)
+
+sum(x <= 0)                        # setores com produção zero ou negativa
 x_inv <- ifelse(x > 0, 1 / x, 0)   # evita divisão por zero
 
 
@@ -29,10 +39,22 @@ A <- sweep(IO, 2, x_inv, "*")
 rm(IO); gc()   # IO não é mais necessária
 
 # Checagens padrão
-sum(A < 0)            # coeficientes negativos (deveria ser 0 ou quase)
-sum(colSums(A) >= 1)  # colunas com soma >= 1: setor usa mais insumo do que produz
-                      # -> com a tabela desequilibrada isso pode acontecer;
-                      #    se for > 0, a L pode sair com valores estranhos
+sum(A < 0)                # coeficientes negativos (deveria ser 0 ou quase)
+
+soma_col <- colSums(A)
+problema <- which(soma_col >= 1)   # setor "compra mais insumo do que produz"
+length(problema)
+
+# Se houver, mostra onde estão (por grupo e os 20 piores)
+# -> com a tabela desequilibrada isso pode acontecer;
+#    se forem muitos, a L pode sair com valores negativos
+if (length(problema) > 0) {
+  print(table(bloco_IO[problema]))
+  piores <- problema[order(-soma_col[problema])][1:min(20, length(problema))]
+  print(data.frame(pais     = lab_IO$V1[piores],
+                   setor    = lab_IO$V3[piores],
+                   soma_col = round(soma_col[piores], 2)))
+}
 
 
 # ------------------------------------------------------------
@@ -42,20 +64,23 @@ sum(colSums(A) >= 1)  # colunas com soma >= 1: setor usa mais insumo do que prod
 I_A <- -A
 diag(I_A) <- diag(I_A) + 1
 
-L <- solve(I_A)
+tempo <- system.time(L <- solve(I_A))
+tempo["elapsed"] / 60    # minutos que a inversão levou
+
 rm(I_A); gc()
 
 
 # ------------------------------------------------------------
 # 4. Checagens padrão da L
 # ------------------------------------------------------------
-sum(L < 0)          # L não deveria ter valores negativos
+sum(L < -1e-10)     # valores negativos (fora erro numérico): deveria ser 0
 min(diag(L))        # diagonal >= 1
 
 # Teste principal: L reproduz a produção a partir da demanda final?
 y <- rowSums(FD)
 x_teste <- as.vector(L %*% y)
 summary(abs(x_teste - x) / ifelse(x > 0, x, NA))   # deve ser ~0
+rm(x_teste)
 
 
 # ------------------------------------------------------------
