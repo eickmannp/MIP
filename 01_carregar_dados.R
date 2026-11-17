@@ -1,0 +1,157 @@
+# ============================================================
+# 01_carregar_dados.R
+# EEMRIO UE–Mercosul — GLORIA 2019
+# Carrega matrizes e labels, faz as checagens básicas
+# e define as regiões (UE-27, Mercosul, resto do mundo).
+#
+# Unidade: mil US$ correntes (conferido: VA do Brasil ~ 1,6 tri US$,
+# compatível com PIB a preços básicos)
+# ============================================================
+
+
+# ------------------------------------------------------------
+# 0. Pacotes e acesso ao SSP Cloud
+# ------------------------------------------------------------
+# Instalar só uma vez:
+# install.packages(c("aws.s3", "data.table"), repos = "https://cloud.r-project.org")
+
+library(aws.s3)
+library(data.table)
+
+# Credenciais do S3 (SSP Cloud). NÃO salvar as chaves reais neste arquivo.
+# Os tokens expiram: copiar valores atualizados da página "Mon compte"
+# do SSP Cloud a cada sessão. Num serviço RStudio do próprio SSP Cloud,
+# essas variáveis normalmente já vêm preenchidas — aí este bloco é dispensável.
+Sys.setenv(
+  AWS_S3_ENDPOINT       = "COLAR_AQUI",
+  AWS_ACCESS_KEY_ID     = "COLAR_AQUI",
+  AWS_SECRET_ACCESS_KEY = "COLAR_AQUI",
+  AWS_SESSION_TOKEN     = "COLAR_AQUI"
+)
+
+bucket <- "projet-esteem"
+
+
+# ------------------------------------------------------------
+# 1. Funções de leitura
+#    Alguns arquivos ".rds" são .rds de verdade, outros são CSV
+#    com a extensão errada. As funções tentam os dois formatos.
+# ------------------------------------------------------------
+ler_s3 <- function(caminho) {
+  tryCatch(
+    s3read_using(FUN = readRDS, object = caminho, bucket = bucket,
+                 opts = list("region" = "")),
+    error = function(e) {
+      s3read_using(FUN = data.table::fread, object = caminho, bucket = bucket,
+                   opts = list("region" = ""))
+    }
+  )
+}
+
+ler_matriz <- function(caminho) as.matrix(ler_s3(caminho))
+ler_label  <- function(caminho) as.data.frame(ler_s3(caminho))
+
+
+# ------------------------------------------------------------
+# 2. Matrizes
+#    A, L, B e G também estão no bucket, mas cada uma ocupa ~3 GB.
+#    Carregar só quando for usar.
+# ------------------------------------------------------------
+IO <- ler_matriz("Gloria/matrices/IO_2019.rds")   # consumo intermediário
+FD <- ler_matriz("Gloria/matrices/FD_2019.rds")   # demanda final
+VA <- ler_matriz("Gloria/matrices/VA_2019.rds")   # valor adicionado
+QT <- ler_matriz("Gloria/matrices/QT_2019.rds")   # satélite dos setores
+QY <- ler_matriz("Gloria/matrices/QY_2019.rds")   # satélite da demanda final
+X  <- ler_matriz("Gloria/matrices/x_2019.rds")    # produção (ver nota no bloco 5)
+
+
+# ------------------------------------------------------------
+# 3. Labels
+# ------------------------------------------------------------
+lab_IO <- ler_label("Gloria/labels/label_IO.rds")  # V1 = país, V2 = nome, V3 = setor
+lab_FD <- ler_label("Gloria/labels/label_FD.rds")  # V1 = país, V2 = nome, V3 = categoria
+lab_VA <- ler_label("Gloria/labels/label_VA.rds")  # 6 componentes do VA
+lab_QT <- ler_label("Gloria/labels/label_QT.rds")  # 159 indicadores (vale também p/ QY)
+
+# Lista das 164 regiões (apesar do nome .xlsx, o arquivo é um CSV)
+lab_regioes <- ler_label("Gloria/GLORIA_ReadMe_059a.xlsx")  # Lfd_Nr, Region_acronyms, Region_names
+
+paises <- unique(lab_IO$V1)                        # as 164 regiões, na ordem da matriz
+stopifnot(identical(paises, trimws(lab_regioes$Region_acronyms)))  # mesma ordem nos dois
+
+
+# ------------------------------------------------------------
+# 4. Checagem de dimensões
+#    (QY vem agregada: uma coluna por país, não 6)
+# ------------------------------------------------------------
+n <- 164 * 120
+
+stopifnot(
+  dim(IO) == c(n, n),
+  dim(FD) == c(n, 164 * 6),
+  dim(VA) == c(6, n),
+  dim(QT) == c(159, n),
+  dim(QY) == c(159, 164),
+  length(X) == n,
+  nrow(lab_IO) == n,
+  nrow(lab_FD) == 164 * 6,
+  nrow(lab_QT) == 159,
+  length(paises) == 164
+)
+
+
+# ------------------------------------------------------------
+# 5. Checagem de equilíbrio da tabela
+#    Numa MRIO equilibrada, produção pelo lado das vendas (x_lin)
+#    = produção pelo lado dos custos (x_col), setor por setor.
+#
+#    SITUAÇÃO EM 16/11/2026: NÃO FECHA.
+#    - erro relativo mediano ~24% por setor (agregado por bloco ~2,6%)
+#    - o arquivo x não bate com nenhuma das duas somas (valores arredondados,
+#      parece vir de outra fonte)
+#    - a matriz A do bucket não bate com IO / x, IO / x_lin nem IO / x_col
+#    -> perguntar a quem preparou os dados como IO, x e A foram construídos
+# ------------------------------------------------------------
+x     <- as.vector(X)
+x_lin <- rowSums(IO) + rowSums(FD)   # vendas: intermediárias + demanda final
+x_col <- colSums(IO) + colSums(VA)   # custos: insumos + valor adicionado
+
+desequilibrio <- (x_lin - x_col) / x_lin
+quantile(abs(desequilibrio), c(0.5, 0.9, 0.99), na.rm = TRUE)
+
+
+# ------------------------------------------------------------
+# 6. Regiões
+# ------------------------------------------------------------
+mercosul <- c("ARG", "BRA", "PRY", "URY")
+
+ue27 <- c("AUT", "BEL", "BGR", "CYP", "CZE", "DEU", "DNK", "ESP", "EST",
+          "FIN", "FRA", "GRC", "HRV", "HUN", "IRL", "ITA", "LTU", "LUX",
+          "LVA", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "SWE")
+
+stopifnot(all(c(mercosul, ue27) %in% paises))      # todos os códigos existem
+
+# Bloco de cada país
+bloco <- function(pais) {
+  ifelse(pais %in% ue27, "UE",
+         ifelse(pais %in% mercosul, "Mercosul", "Resto"))
+}
+
+# Bloco de cada linha/coluna, por dimensão da matriz
+bloco_IO <- bloco(lab_IO$V1)   # 19.680 — linhas e colunas de IO, A, L;
+                               #          linhas de FD; colunas de QT e VA; x
+bloco_FD <- bloco(lab_FD$V1)   # 984    — colunas de FD
+bloco_QY <- bloco(paises)      # 164    — colunas de QY
+
+# Posições prontas para recortar as matrizes
+pos_mer <- which(bloco_IO == "Mercosul")   # 480  (4 x 120)
+pos_ue  <- which(bloco_IO == "UE")         # 3240 (27 x 120)
+
+col_FD_mer <- which(bloco_FD == "Mercosul")   # 24  (4 x 6)
+col_FD_ue  <- which(bloco_FD == "UE")         # 162 (27 x 6)
+
+col_QY_mer <- which(bloco_QY == "Mercosul")   # 4
+col_QY_ue  <- which(bloco_QY == "UE")         # 27
+
+# Conferência
+table(bloco_IO) / 120   # países por bloco: Mercosul 4, UE 27, Resto 133
