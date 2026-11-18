@@ -29,13 +29,13 @@ Sys.setenv(
   AWS_SESSION_TOKEN = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJWVENOS1lYVDRYWkJIU1dGMzkwTCIsImF1ZCI6Im1pbmlvLWRhdGFub2RlIiwiYXV0aF90aW1lIjoxNzk0ODY0OTExLCJhenAiOiJvbnl4aWEiLCJlbWFpbCI6InRhdXNjaGxAYWZkLmZyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImV4cCI6MTc5NTQ3NDgxNywiZmFtaWx5X25hbWUiOiJUYXVzY2giLCJnaXZlbl9uYW1lIjoiTHVjYSIsImdyb3VwcyI6WyJVU0VSX09OWVhJQSIsImVzdGVlbSJdLCJpYXQiOjE3OTQ4NzAwMTYsImlzcyI6Imh0dHBzOi8vYXV0aC5sYWIuc3NwY2xvdWQuZnIvYXV0aC9yZWFsbXMvc3NwY2xvdWQiLCJqdGkiOiJvbnJ0cnQ6NzcwNDkzNjMtODlkOC04ODZlLThlYjYtOWJjYjg2NDA4ZjI2IiwibG9jYWxlIjoiZnIiLCJuYW1lIjoiTHVjYSBUYXVzY2giLCJvbnl4aWEtdXNlcm5hbWUiOiJ0YXVzY2giLCJwb2xpY3kiOiJzdHNvbmx5LHN0c29ubHkyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidGF1c2NoIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCByZXNvdXJjZTptaW5pbyIsInNpZCI6ImE2NEVaU2JvVEFmdjdEX1Rrc2d1c0JoeiIsInN1YiI6IjJhMDI0NGQwLWJlYTktNDBkOC1hNzczLWQ0ZDZlMjAwM2EwZSIsInR5cCI6IkJlYXJlciJ9.luq_eYWXvO10qJjMkmkvtGmV6C7J15kftkVxotzYbZzyvj4blbiq9CahW8vgZDjQBgQaKlDSSBxRd_LM5Fkmww"
 )
 
-bucket <- "projet-esteem"
+bucket <- "projet-esteem" // vale a pena olhar porque claude fez isso. imagino que pra simplificar.
 
 
 # ------------------------------------------------------------
 # 1. Funções de leitura
 #    Alguns arquivos ".rds" são .rds de verdade, outros são CSV
-#    com a extensão errada. As funções tentam os dois formatos.
+#    com a extensão errada. As funções tentam os dois formatos. WHY???
 # ------------------------------------------------------------
 ler_s3 <- function(caminho) {
   tryCatch(
