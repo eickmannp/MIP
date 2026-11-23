@@ -7,7 +7,7 @@
 
 
 # ---- 1. Output -------------------------------------------------
-x <- x_row                                        # sales side
+x <- x_row                                        # use side (row sums)
 stopifnot(all(labels$IO[x <= 0, 1] == "DYE"))     # x = 0 only for DYE (extinct region)
 x_inv <- ifelse(x > 0, 1 / x, 0)
 
