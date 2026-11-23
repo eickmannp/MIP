@@ -2,7 +2,7 @@
 # 02_compute_x_A_L.R
 # Output (x), technical coefficients (A), adjustment of the
 # problematic columns of A, and Leontief inverse (L).
-# Run after 01. Peak memory: ~12–15 GB.
+# Run after 01. Peak memory: ~16 GB.
 # ============================================================
 
 
@@ -58,3 +58,19 @@ stopifnot(min(L) > -1e-8, min(diag(L)) > 1 - 1e-8)
 # linked to the adjusted columns; this shows how large the deviation is.
 x_L <- as.vector(L %*% rowSums(FD))
 quantile(abs(x_L - x) / pmax(x, 1), c(0.5, 0.9, 0.99))
+
+
+# ---- 5. Save results (optional) --------------------------------
+# Saved in the persistent folder of the RStudio service (~/work), OUTSIDE the
+# Git repository (~/work/MIP) and not in the shared bucket. A and L take
+# ~1–3 GB each on disk; check free space with system("df -h ~/work") first.
+save_results <- FALSE
+out.path     <- "~/work/results/"
+
+if (save_results) {
+  dir.create(out.path, recursive = TRUE, showWarnings = FALSE)
+  saveRDS(x,       paste0(out.path, "x_2019.rds"))
+  saveRDS(adj_log, paste0(out.path, "adj_log_2019.rds"))
+  saveRDS(A,       paste0(out.path, "A_adj_2019.rds"))
+  saveRDS(L,       paste0(out.path, "L_2019.rds"))
+}
