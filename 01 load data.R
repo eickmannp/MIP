@@ -23,15 +23,10 @@ labels.path <- "Gloria/matrices/059/labels/"
 
 
 # ---- 1. Reading ------------------------------------------------
-# Some ".rds" files in the bucket are CSV: try readRDS, fall back to fread.
+# All files in the 059 folder are CSV despite the ".rds" extension (checked 23/11).
 read_s3 <- function(path) {
-  tryCatch(
-    s3read_using(FUN = readRDS, object = path, bucket = bucket,
-                 opts = list("region" = "")),
-    error = function(e)
-      s3read_using(FUN = data.table::fread, encoding = "UTF-8",
-                   object = path, bucket = bucket, opts = list("region" = ""))
-  )
+  s3read_using(FUN = data.table::fread, encoding = "UTF-8",
+               object = path, bucket = bucket, opts = list("region" = ""))
 }
 
 IO <- as.matrix(read_s3(paste0(io.path, "IO_2019.rds")))   # intermediate use
@@ -65,14 +60,15 @@ stopifnot(
   length(X) == n
 )
 
-# Balance: output from the sales side (x_row) and from the cost side (x_col)
+# Balance: total output from the use side (row sums, x_row) and from the
+# input side (column sums, x_col)
 x_row <- rowSums(IO) + rowSums(FD)
 x_col <- colSums(IO) + colSums(VA)
 
 # x_row must match the official output (rounding differences only)
 stopifnot(quantile(abs(x_row - X) / pmax(X, 1), 0.99) < 1e-3)
 
-# Cost side: known imbalance (18/11: 0.03% / 3% / 65%)
+# Input side: known imbalance (18/11: 0.03% / 2.9% / 50%)
 quantile(abs(x_row - x_col) / pmax(x_row, 1), c(0.5, 0.9, 0.99))
 
 
