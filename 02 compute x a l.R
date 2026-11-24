@@ -73,4 +73,6 @@ if (save_results) {
   saveRDS(adj_log, paste0(out.path, "adj_log_2019.rds"))
   saveRDS(A,       paste0(out.path, "A_adj_2019.rds"))
   saveRDS(L,       paste0(out.path, "L_2019.rds"))
+  saveRDS(exp_dest, paste0(out.path, "exp_dest_2019.rds"))   # from script 01
+  saveRDS(x_col,    paste0(out.path, "x_col_2019.rds"))      # input side, for robustness
 }
