@@ -90,3 +90,21 @@ group_IO <- group_of(labels$IO[, 1])   # rows and columns of IO, A, L; columns o
 group_FD <- group_of(labels$FD[, 1])   # columns of FD
 
 table(group_IO) / 120   # China 1, EU 27, Mercosur 4, Rest 131, USA 1
+
+
+# ---- 4. Gross exports by destination group ------------------------
+# Needed for the composition by exporting sector and for Part B
+# (q L e, exports as exogenous demand; Magacho, Espagne & Godin 2024).
+# Computed here, from the original flows, because script 02 removes IO
+# (and the adjusted A would change the flows of the adjusted columns).
+# exp_dest[i, g]: sales of region-sector i to group g, intermediate + final.
+grp  <- c("EU", "Mercosur", "China", "USA", "Rest")
+S_IO <- sapply(grp, function(g) as.numeric(group_IO == g))   # 19,680 x 5
+S_FD <- sapply(grp, function(g) as.numeric(group_FD == g))   #    984 x 5
+exp_dest <- IO %*% S_IO + FD %*% S_FD                        # 19,680 x 5
+stopifnot(max(abs(rowSums(exp_dest) - x_row) / pmax(x_row, 1)) < 1e-8)
+
+# Bilateral gross exports by sector (the e of q L e)
+e_ME <- exp_dest[, "EU"]       * (group_IO == "Mercosur")   # Mercosur -> EU
+e_EM <- exp_dest[, "Mercosur"] * (group_IO == "EU")         # EU -> Mercosur
+c(Mercosur_to_EU = sum(e_ME), EU_to_Mercosur = sum(e_EM)) / 1e6   # billion US$
