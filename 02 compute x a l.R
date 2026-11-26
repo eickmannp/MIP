@@ -64,7 +64,7 @@ quantile(abs(x_L - x) / pmax(x, 1), c(0.5, 0.9, 0.99))
 # Saved in the persistent folder of the RStudio service (~/work), OUTSIDE the
 # Git repository (~/work/MIP) and not in the shared bucket. A and L take
 # ~1–3 GB each on disk; check free space with system("df -h ~/work") first.
-save_results <- FALSE
+save_results <- TRUE
 out.path     <- "~/work/results/"
 
 if (save_results) {
