@@ -2,6 +2,9 @@
 # 03_footprints_TiVA.R
 # Part A, steps 1-7b of the plan:
 #   1. resource indicators and intensities (q), VA coefficients (v)
+#      - materials in total and in the 4 IRP groups (the total is distorted
+#        by construction minerals: use the groups; plan 5.6)
+#      - agricultural land with and without pasture (cropland only = robustness)
 #      - official VA and residual VA, side by side
 #      - Brazilian pasture: original and corrected (plan 5.1)
 #   2. footprints and TiVA by origin x destination: F = q^ L Y
@@ -30,16 +33,27 @@ pos   <- function(ctr, sec) which(labels$IO[, 1] == ctr & labels$IO[, 3] == sec)
 # ---- 1. Indicators ---------------------------------------------
 # QT rows used (plan 5.2). CHECK the printed names and units before
 # reading any result: if a block is wrong, fix the row numbers here.
-idx <- list(material   = 1:367,      # all material extraction (4 IRP groups: next step)
+idx <- list(material   = 1:367,      # all material extraction
+            mat_bio    = 1:328,      # IRP group: biomass (crops, residues, grazed biomass, wood, fish)
+            mat_met    = 329:343,    # IRP group: metal ores
+            mat_nmm    = 344:357,    # IRP group: non-metallic minerals (incl. sand, gravel, stone)
+            mat_fos    = 358:367,    # IRP group: fossil fuels
             land_agri  = 373:375,    # temporary crops, permanent crops, pasture
+            land_crop  = 373:374,    # cropland only (robustness: no pasture allocation issues)
             ghg        = 3169,       # GHG total EDGAR, without land-use change
             employment = 368:369)    # employment by sex (sum), exploratory
 
 labels$QT[c(1, 367, 368:369, 373:375, 3169), ]   # names and units: check
+labels$QT[c(328, 329, 343, 344, 357, 358), 3]     # borders of the IRP groups: check
 sapply(idx, function(i) paste(unique(labels$QT[i, ncol(labels$QT)]), collapse = " / "))  # one unit per block?
 
 R <- rbind(material   = colSums(QT[idx$material, ]),
+           mat_bio    = colSums(QT[idx$mat_bio, ]),
+           mat_met    = colSums(QT[idx$mat_met, ]),
+           mat_nmm    = colSums(QT[idx$mat_nmm, ]),
+           mat_fos    = colSums(QT[idx$mat_fos, ]),
            land_agri  = colSums(QT[idx$land_agri, ]),
+           land_crop  = colSums(QT[idx$land_crop, ]),
            ghg        = QT[idx$ghg, ],
            employment = colSums(QT[idx$employment, ]))
 
@@ -67,9 +81,11 @@ land_corr[j_beef]  <- land_corr[j_beef]  + moved * share_beef
 land_corr[j_dairy] <- land_corr[j_dairy] + moved * (1 - share_beef)
 stopifnot(abs(sum(land_corr) - sum(R["land_agri", ])) <= 1e-9 * sum(R["land_agri", ]))
 
-R <- rbind(R[c("material", "land_agri"), ],
+R <- rbind(R[c("material", "mat_bio", "mat_met", "mat_nmm", "mat_fos", "land_agri"), ],
            land_agri_corr = land_corr,
-           R[c("ghg", "employment"), ])
+           R[c("land_crop", "ghg", "employment"), ])
+stopifnot(abs(colSums(R[c("mat_bio", "mat_met", "mat_nmm", "mat_fos"), ]) - R["material", ]) <=
+            1e-6 * pmax(R["material", ], 1))           # the 4 groups add up to the total
 
 c(pasture_moved = moved,
   share_of_BRA_pasture = moved / sum(QT[row_pasture, labels$IO[, 1] == "BRA"]),
@@ -123,10 +139,8 @@ round(colSums(TV$va_off) / colSums(Y) - 1, 4)
 res_names <- rownames(q)
 balances <- data.frame(
   indicator = res_names,
-  unit      = c(sapply(idx[c("material", "land_agri")], function(i) labels$QT[i[1], ncol(labels$QT)]),
-                labels$QT[idx$land_agri[1], ncol(labels$QT)],
-                labels$QT[idx$ghg, ncol(labels$QT)],
-                labels$QT[idx$employment[1], ncol(labels$QT)]),
+  unit      = sapply(c(idx, land_agri_corr = list(idx$land_agri))[res_names],
+                     function(i) labels$QT[i[1], ncol(labels$QT)]),
   M_to_EU   = sapply(res_names, function(r) F[[r]]["Mercosur", "EU"]),
   EU_to_M   = sapply(res_names, function(r) F[[r]]["EU", "Mercosur"]))
 balances$balance <- balances$M_to_EU - balances$EU_to_M      # > 0: Mercosur net exporter
@@ -150,7 +164,7 @@ ratios
 # q^ L e with exports as exogenous demand and the global L (Magacho,
 # Espagne & Godin 2024). Rule A: resource and VA of the exporting bloc
 # ("own"); what comes from other countries is reported apart ("third").
-QV <- rbind(q, V)                                            # 7 x 19,680
+QV <- rbind(q, V)                                            # 12 x 19,680
 
 content <- function(own, e) {
   m_own   <- QV[, own,  drop = FALSE] %*% L[own,  own]       # own-bloc multipliers
