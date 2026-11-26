@@ -13,9 +13,12 @@ library(aws.s3)
 library(data.table)
 library(readxl)
 
-# Credentials: already set inside the SSP Cloud RStudio service.
-# Outside of it: Sys.setenv(AWS_S3_ENDPOINT = , AWS_ACCESS_KEY_ID = ,
-#                           AWS_SECRET_ACCESS_KEY = , AWS_SESSION_TOKEN = )
+Sys.setenv(
+  AWS_S3_ENDPOINT = "minio.lab.sspcloud.fr",
+  AWS_ACCESS_KEY_ID = "YEEKA0EO0I9DJODHWBTD",
+  AWS_SECRET_ACCESS_KEY = "LRT3KSCtbqlG0hetsfDutfLta2jHxeB9ZwZ1tBm5",
+  AWS_SESSION_TOKEN = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJZRUVLQTBFTzBJOURKT0RIV0JURCIsImF1ZCI6Im1pbmlvLWRhdGFub2RlIiwiYXV0aF90aW1lIjoxNzk0ODY0OTExLCJhenAiOiJvbnl4aWEiLCJlbWFpbCI6InRhdXNjaGxAYWZkLmZyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImV4cCI6MTc5NjE0NTY3MSwiZmFtaWx5X25hbWUiOiJUYXVzY2giLCJnaXZlbl9uYW1lIjoiTHVjYSIsImdyb3VwcyI6WyJVU0VSX09OWVhJQSIsImVzdGVlbSJdLCJpYXQiOjE3OTU1NDA4NzAsImlzcyI6Imh0dHBzOi8vYXV0aC5sYWIuc3NwY2xvdWQuZnIvYXV0aC9yZWFsbXMvc3NwY2xvdWQiLCJqdGkiOiJvbnJ0cnQ6Zjk3MTdjYWItZmM3Zi0xZmQxLTk1ZWYtYmZiNTdhNzhjNmNkIiwibG9jYWxlIjoiZnIiLCJuYW1lIjoiTHVjYSBUYXVzY2giLCJvbnl4aWEtdXNlcm5hbWUiOiJ0YXVzY2giLCJwb2xpY3kiOiJzdHNvbmx5LHN0c29ubHkyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidGF1c2NoIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCByZXNvdXJjZTptaW5pbyIsInNpZCI6ImE2NEVaU2JvVEFmdjdEX1Rrc2d1c0JoeiIsInN1YiI6IjJhMDI0NGQwLWJlYTktNDBkOC1hNzczLWQ0ZDZlMjAwM2EwZSIsInR5cCI6IkJlYXJlciJ9.AiLK3UjguZ2ozW5fLb-MgSrNISCog31F3Ark30BBpzWU6MTjEZA5Px_TQl926ZDlizuNlCN9Iqd2yi9kNN4XsA"
+)
 
 bucket      <- "projet-esteem"
 io.path     <- "Gloria/matrices/059/global/2019/"
